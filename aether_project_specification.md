@@ -2,7 +2,7 @@
 
 Este documento contém o guia de arquitetura e as instruções passo a passo para a criação do seu novo projeto, o **Aether**, desenvolvido como um fork do **QwenPaw**. 
 
-Este projeto descarta completamente o sistema legado de módulos HUD (Navegador Web e Terminal) e aproveita o aprendizado de voz e biometria do JARVIS-v3 para criar uma estação de trabalho multi-agente moderna, com design plano azul premium, um canvas de interações visuais dinâmicas e segurança por reconhecimento de voz.
+Este projeto descarta completamente o sistema legado de módulos HUD (Navegador Web e Terminal) e aproveita o aprendizado de voz e biometria local para criar uma estação de trabalho multi-agente moderna, com design plano azul premium, um canvas de interações visuais dinâmicas e segurança por reconhecimento de voz.
 
 ---
 
@@ -31,7 +31,7 @@ graph TD
     Mic[Captura de Microfone] --> AudioStream[Stream de Áudio Local]
     AudioStream --> WakeWord[openWakeWord Engine: Detector Aether]
     WakeWord -->|Palavra Detectada| SpeakerVerifier[Next-TDNN Speaker Verification]
-    SpeakerVerifier -->|Compara Embeddings| Footprint{Footprint de Voz do Murilo?}
+    SpeakerVerifier -->|Compara Embeddings| Footprint{Footprint de Voz do Proprietário?}
     Footprint -->|Sim - Acesso Autorizado| STT[Vosk Local STT: Transcrição]
     Footprint -->|Não - Bloqueado| Silent[Ignorar ou Alerta Silencioso]
     STT --> SendToAgent[Enviar Texto para o Backend QwenPaw]
@@ -43,10 +43,10 @@ graph TD
 ### 1. Componentes Técnicos do Pipeline
 *   **STT Local (Speech-to-Text)**: Vosk Browser (via Web Assembly) ou modelo local Whisper via FastAPI no backend para transcrição rápida em português offline.
 *   **TTS Local (Text-to-Speech)**: Piper TTS ou API do MiMo-TTS para geração de voz de alta fidelidade com sotaque natural em português.
-*   **Detector de WakeWord**: `openwakeword-wasm-browser` configurado com carregamento dinâmico do modelo ONNX. O usuário pode escolher ou definir o nome da palavra de ativação nas configurações (ex: "Aether", "Jarvis", "Lia", "Alexa"), e o sistema carrega o arquivo de modelo correspondente (ex: `aether.onnx`, `jarvis.onnx`) do diretório local `/models/openwakeword/` em tempo de execução.
+*   **Detector de WakeWord**: `openwakeword-wasm-browser` configurado com carregamento dinâmico do modelo ONNX. O usuário pode escolher ou definir o nome da palavra de ativação nas configurações (ex: "Aether", "Assistant", "Lia", "Alexa"), e o sistema carrega o arquivo de modelo correspondente (ex: `aether.onnx`, `assistant.onnx`) do diretório local `/models/openwakeword/` em tempo de execução.
 *   **Verificação de Orador (Biometria)**:
     *   Biblioteca: `@jaehyun-ko/speaker-verification`.
-    *   No carregamento do app, o usuário grava sua voz para gerar um `speakerFootprint` (vetor de embedding da voz do Murilo).
+    *   No carregamento do app, o usuário grava sua voz para gerar um `speakerFootprint` (vetor de embedding da voz do proprietário).
     *   A cada ativação da palavra de ativação escolhida pelo usuário, o áudio de ativação é transformado em embedding e comparado via similaridade de cosseno com o footprint do proprietário. O comando só avança se a similaridade for superior ao limiar configurado (ex: `0.75`).
 
 ---
@@ -114,7 +114,7 @@ Em vez de iframes de navegador web ou terminal estático, o Aether implementará
       return; // Ignora o comando
     }
     ```
-5.  Adicione um seletor ou campo de texto nas Configurações do App para que o usuário escolha o nome do WakeWord. Quando alterado, salve no `localStorage` e chame o método de atualização do serviço de WakeWord para descarregar o modelo anterior e carregar o novo ONNX (ex: `jarvis.onnx` ou `aether.onnx`) dinamicamente.
+5.  Adicione um seletor ou campo de texto nas Configurações do App para que o usuário escolha o nome do WakeWord. Quando alterado, salve no `localStorage` e chame o método de atualização do serviço de WakeWord para descarregar o modelo anterior e carregar o novo ONNX (ex: `assistant.onnx` ou `aether.onnx`) dinamicamente.
 
 
 ### Passo 5: Mecanismo de Escrita do Canvas pelo Agente

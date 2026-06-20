@@ -10,7 +10,7 @@ Este plano descreve o design de arquitetura, a estrutura de arquivos e as tarefa
 ## 4-Phase Roadmap
 
 ### Phase 1: Clonagem e Configuração do Ambiente [Foundation]
-- [ ] Clonar o repositório original do QwenPaw de `\\100.110.153.91\dev\JARVIS-v3\aether-core` para a pasta local `c:\Users\muril\Projects\Aether\aether-core`.
+- [ ] Clonar o repositório original do QwenPaw para a pasta local `aether-core`.
 - [ ] Ajustar `pyproject.toml` no backend para relaxar as restrições de dependências do Python local.
 - [ ] Criar ambiente virtual e instalar dependências de backend em modo editável (`pip install -e .`).
 - [ ] Inicializar configuração do QwenPaw (`qwenpaw init --defaults --accept-security --force`).

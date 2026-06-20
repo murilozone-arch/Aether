@@ -2,7 +2,7 @@
 
 **Aether** é uma estação de trabalho multi-agente avançada e moderna, desenvolvida como um fork do projeto de código aberto [QwenPaw](https://github.com/agentscope-ai/QwenPaw) da equipe do **AgentScope**.
 
-O projeto descarta completamente o sistema legado de módulos HUD e aproveita aprendizados de voz e biometria local do JARVIS-v3 para criar uma interface de controle premium com design *Flat Blue*, Canvas Dinâmico de interações visuais e segurança por reconhecimento biométrico de voz.
+O projeto descarta completamente o sistema legado de módulos HUD e aproveita aprendizados de voz e biometria local para criar uma interface de controle premium com design *Flat Blue*, Canvas Dinâmico de interações visuais e segurança por reconhecimento biométrico de voz.
 
 ---
 
@@ -18,14 +18,14 @@ O projeto descarta completamente o sistema legado de módulos HUD e aproveita ap
 
 ## 🎙️ Pipeline de Voz e Biometria de Segurança
 
-O Aether implementa um pipeline de voz offline/local extremamente seguro para garantir que o console só responda aos comandos de voz do seu proprietário (**Murilo**):
+O Aether implementa um pipeline de voz offline/local extremamente seguro para garantir que o console só responda aos comandos de voz do seu proprietário:
 
 ```mermaid
 graph TD
     Mic[Captura de Microfone] --> AudioStream[Stream de Áudio Local]
     AudioStream --> WakeWord[openWakeWord Engine: Detector Aether]
     WakeWord -->|Palavra Detectada| SpeakerVerifier[Next-TDNN Speaker Verification]
-    SpeakerVerifier -->|Compara Embeddings| Footprint{Footprint de Voz do Murilo?}
+    SpeakerVerifier -->|Compara Embeddings| Footprint{Footprint de Voz do Proprietário?}
     Footprint -->|Sim - Acesso Autorizado| STT[Google Web Speech API STT]
     Footprint -->|Não - Bloqueado| Silent[Ignorar / Alerta Silencioso]
     STT --> SendToAgent[Enviar Texto para o Backend QwenPaw]
@@ -35,7 +35,7 @@ graph TD
 ```
 
 ### Principais Componentes Técnicos
-1.  **WakeWord Engine:** Detecção local via `openwakeword-wasm-browser` no navegador com carregamento dinâmico de modelos ONNX (ex: `jarvis.onnx`, `aether.onnx`) salvos na pasta `/models/openwakeword/`.
+1.  **WakeWord Engine:** Detecção local via `openwakeword-wasm-browser` no navegador com carregamento dinâmico de modelos ONNX (ex: `aether.onnx`, `assistant.onnx`) salvos na pasta `/models/openwakeword/`.
 2.  **Verificação de Orador (Biometria):** Integração com `@jaehyun-ko/speaker-verification` no frontend para extrair embeddings de voz da frase de ativação e compará-los com o footprint gravado pelo proprietário.
 3.  **Onboarding Interativo:** Interface amigável no console para cadastrar e recalibrar a biometria gravando 3 amostras curtas e salvando o vetor médio no LocalStorage.
 4.  **STT (Speech-to-Text):** Transcrição rápida de português via **Google Web Speech API** nativa do navegador.
@@ -80,4 +80,4 @@ Este projeto é um fork do **QwenPaw**, desenvolvido originalmente por **AgentSc
 *   Repositório Original: [github.com/agentscope-ai/QwenPaw](https://github.com/agentscope-ai/QwenPaw)
 *   Documentação Original: [qwenpaw.agentscope.io](https://qwenpaw.agentscope.io/)
 
-Aether mantém a licença original do QwenPaw. Para mais detalhes, consulte o arquivo [LICENSE](file:///c:/Users/muril/Projects/Aether/aether-core/LICENSE).
+Aether mantém a licença original do QwenPaw. Para mais detalhes, consulte o arquivo [LICENSE](aether-core/LICENSE).
