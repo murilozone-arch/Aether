@@ -66,9 +66,9 @@ interface ApprovalMessageData {
   timeoutSeconds: number;
 }
 
-import WhisperSpeechButton, {
-  WhisperSpeechButtonRef,
-} from "./components/WhisperSpeechButton";
+
+import AetherCanvas from "../../components/AetherCanvas";
+import AetherVoiceButton from "../../components/AetherVoiceButton";
 
 import {
   toDisplayUrl,
@@ -1056,6 +1056,39 @@ export default function ChatPage() {
     });
   }, []);
 
+  const [leftWidth, setLeftWidth] = useState<number>(50); // percentage
+  const [isDragging, setIsDragging] = useState<boolean>(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  const handleMouseDown = useCallback((e: React.MouseEvent) => {
+    e.preventDefault();
+    setIsDragging(true);
+  }, []);
+
+  useEffect(() => {
+    if (!isDragging) return;
+
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!containerRef.current) return;
+      const containerRect = containerRef.current.getBoundingClientRect();
+      const newWidthPx = e.clientX - containerRect.left;
+      const newWidthPercent = Math.max(20, Math.min(80, (newWidthPx / containerRect.width) * 100));
+      setLeftWidth(newWidthPercent);
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [isDragging]);
+
   // Redirect to /coding when coding mode is active, preserving sessionId.
   useEffect(() => {
     if (initialized && codingMode && !location.pathname.startsWith("/coding")) {
@@ -1492,7 +1525,6 @@ export default function ChatPage() {
   const navigateRef = useRef(navigate);
   const chatRef = useRef<IAgentScopeRuntimeWebUIRef>(null);
   const pendingClearHistoryRef = useRef(false);
-  const whisperSpeechRef = useRef<WhisperSpeechButtonRef>(null);
   const [whisperEnabled, setWhisperEnabled] = useState(false);
   const [whisperChecked, setWhisperChecked] = useState(false);
 
@@ -1802,14 +1834,15 @@ export default function ChatPage() {
         e.key.toLowerCase() === "m"
       ) {
         e.preventDefault();
-        if (whisperEnabled) {
-          whisperSpeechRef.current?.toggleRecording();
+        const micBtn = document.querySelector('[class*="AudioOutlined"]')?.closest('button') as HTMLButtonElement | null;
+        if (micBtn) {
+          micBtn.click();
         }
       }
     };
     document.addEventListener("keydown", handleShortcut);
     return () => document.removeEventListener("keydown", handleShortcut);
-  }, [isChatActive, whisperEnabled]);
+  }, [isChatActive]);
   chatIdRef.current = chatId;
   navigateRef.current = navigate;
 
@@ -2478,18 +2511,12 @@ export default function ChatPage() {
               ) : null}
             </>
           ) : undefined,
-        prefix:
-          whisperEnabled || pluginSenderPrefix.length > 0 ? (
-            <>
-              {whisperEnabled ? (
-                <WhisperSpeechButton
-                  ref={whisperSpeechRef}
-                  onTranscription={handleWhisperTranscription}
-                />
-              ) : null}
-              {pluginSenderPrefix}
-            </>
-          ) : undefined,
+        prefix: (
+          <>
+            <AetherVoiceButton />
+            {pluginSenderPrefix}
+          </>
+        ),
         attachments: {
           multiple: true,
           trigger: function (props: any) {
@@ -2713,178 +2740,192 @@ export default function ChatPage() {
 
   return (
     <div className={styles.chatPageRoot}>
-      {/* Main chat area */}
-      <div className={styles.chatMainArea}>
-        <div
-          className={
-            isWideMode
-              ? `${styles.chatMessagesArea} ${styles.wideMode}`
-              : styles.chatMessagesArea
-          }
-        >
-          <AgentScopeRuntimeWebUI
-            ref={chatRef}
-            key={refreshKey}
-            options={options}
-          />
-        </div>
-
-        {/* Rate-limit guidance banner */}
-        {rateLimitAlternatives.length > 0 && (
-          <div className={styles.rateLimitBanner}>
-            <span className={styles.rateLimitText}>
-              {t("chat.rateLimitMessage")}
-            </span>
-            <div className={styles.rateLimitActions}>
-              {rateLimitAlternatives.slice(0, 3).map((alt) => (
-                <Button
-                  key={`${alt.provider_id}/${alt.model_id}`}
-                  size="small"
-                  type="default"
-                  onClick={async () => {
-                    try {
-                      await providerApi.setActiveLlm({
-                        provider_id: alt.provider_id,
-                        model: alt.model_id,
-                        scope: "agent",
-                        agent_id: selectedAgent,
-                      });
-                      window.dispatchEvent(new CustomEvent("model-switched"));
-                      message.success(
-                        t("chat.rateLimitSwitched", { model: alt.model_name }),
-                      );
-                      setRateLimitAlternatives([]);
-                    } catch {
-                      message.error(t("modelSelector.switchFailed"));
-                    }
-                  }}
-                >
-                  {alt.model_name}
-                </Button>
-              ))}
-              <Button
-                size="small"
-                type="link"
-                onClick={() => setRateLimitAlternatives([])}
-              >
-                {t("common.close")}
-              </Button>
+      <div ref={containerRef} className={styles.splitViewContainer}>
+        {/* Left panel: conversational interface */}
+        <div className={styles.splitPanelLeft} style={{ width: `${leftWidth}%` }}>
+          <div className={styles.chatMainArea}>
+            <div
+              className={
+                isWideMode
+                  ? `${styles.chatMessagesArea} ${styles.wideMode}`
+                  : styles.chatMessagesArea
+              }
+            >
+              <AgentScopeRuntimeWebUI
+                ref={chatRef}
+                key={refreshKey}
+                options={options}
+              />
             </div>
-          </div>
-        )}
 
-        {/* Render approval cards as overlays */}
-        {Array.from(approvalRequests.values()).map((request) => (
-          <div
-            key={request.requestId}
-            data-approval-id={request.requestId}
-            style={{
-              position: "fixed",
-              bottom: 80,
-              right: 24,
-              zIndex: 1000,
-              maxWidth: 480,
-              width: "calc(100vw - 48px)",
-            }}
-          >
-            <ApprovalCard
-              requestId={request.requestId}
-              agentId={request.agentId}
-              toolName={request.toolName}
-              severity={request.severity}
-              findingsCount={request.findingsCount}
-              findingsSummary={request.findingsSummary}
-              toolParams={request.toolParams}
-              createdAt={request.createdAt}
-              timeoutSeconds={request.timeoutSeconds}
-              sessionId={request.sessionId}
-              rootSessionId={request.rootSessionId}
-              onApprove={handleApprove}
-              onDeny={handleDeny}
-              onCancel={() => {
-                const sessionId =
-                  request.rootSessionId || window.currentSessionId || "";
-                const resolvedChatId =
-                  sessionApi.getRealIdForSession(sessionId) ??
-                  chatIdRef.current ??
-                  sessionId;
+            {/* Rate-limit guidance banner */}
+            {rateLimitAlternatives.length > 0 && (
+              <div className={styles.rateLimitBanner}>
+                <span className={styles.rateLimitText}>
+                  {t("chat.rateLimitMessage")}
+                </span>
+                <div className={styles.rateLimitActions}>
+                  {rateLimitAlternatives.slice(0, 3).map((alt) => (
+                    <Button
+                      key={`${alt.provider_id}/${alt.model_id}`}
+                      size="small"
+                      type="default"
+                      onClick={async () => {
+                        try {
+                          await providerApi.setActiveLlm({
+                            provider_id: alt.provider_id,
+                            model: alt.model_id,
+                            scope: "agent",
+                            agent_id: selectedAgent,
+                          });
+                          window.dispatchEvent(new CustomEvent("model-switched"));
+                          message.success(
+                            t("chat.rateLimitSwitched", { model: alt.model_name }),
+                          );
+                          setRateLimitAlternatives([]);
+                        } catch {
+                          message.error(t("modelSelector.switchFailed"));
+                        }
+                      }}
+                    >
+                      {alt.model_name}
+                    </Button>
+                  ))}
+                  <Button
+                    size="small"
+                    type="link"
+                    onClick={() => setRateLimitAlternatives([])}
+                  >
+                    {t("common.close")}
+                  </Button>
+                </div>
+              </div>
+            )}
 
-                if (resolvedChatId) {
-                  console.log("[Chat] Calling stopChat with:", resolvedChatId);
-                  chatApi
-                    .stopChat(resolvedChatId)
-                    .then(() => {
-                      console.log("[Chat] stopChat succeeded");
-                      setApprovals((prev) =>
-                        prev.filter(
-                          (item) =>
-                            item.root_session_id !== request.rootSessionId,
-                        ),
-                      );
-                    })
-                    .catch((err) => {
-                      console.error("[Chat] stopChat failed:", err);
-                    });
-                } else {
-                  console.warn(
-                    "[Chat] No chat_id resolved, cannot cancel task",
-                  );
-                }
-              }}
-            />
-          </div>
-        ))}
-
-        <Modal
-          open={showModelPrompt}
-          closable={false}
-          footer={null}
-          width={480}
-          styles={{
-            content: isDark
-              ? {
-                  background: "#1f1f1f",
-                  boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
-                }
-              : undefined,
-          }}
-        >
-          <Result
-            icon={<ExclamationCircleOutlined style={{ color: "#faad14" }} />}
-            title={
-              <span
-                style={{ color: isDark ? "rgba(255,255,255,0.88)" : undefined }}
-              >
-                {t("modelConfig.promptTitle")}
-              </span>
-            }
-            subTitle={
-              <span
-                style={{ color: isDark ? "rgba(255,255,255,0.55)" : undefined }}
-              >
-                {t("modelConfig.promptMessage")}
-              </span>
-            }
-            extra={[
-              <Button key="skip" onClick={() => setShowModelPrompt(false)}>
-                {t("modelConfig.skipButton")}
-              </Button>,
-              <Button
-                key="configure"
-                type="primary"
-                icon={<SettingOutlined />}
-                onClick={() => {
-                  setShowModelPrompt(false);
-                  navigate("/models");
+            {/* Render approval cards as overlays */}
+            {Array.from(approvalRequests.values()).map((request) => (
+              <div
+                key={request.requestId}
+                data-approval-id={request.requestId}
+                style={{
+                  position: "fixed",
+                  bottom: 80,
+                  right: 24,
+                  zIndex: 1000,
+                  maxWidth: 480,
+                  width: "calc(100vw - 48px)",
                 }}
               >
-                {t("modelConfig.configureButton")}
-              </Button>,
-            ]}
-          />
-        </Modal>
+                <ApprovalCard
+                  requestId={request.requestId}
+                  agentId={request.agentId}
+                  toolName={request.toolName}
+                  severity={request.severity}
+                  findingsCount={request.findingsCount}
+                  findingsSummary={request.findingsSummary}
+                  toolParams={request.toolParams}
+                  createdAt={request.createdAt}
+                  timeoutSeconds={request.timeoutSeconds}
+                  sessionId={request.sessionId}
+                  rootSessionId={request.rootSessionId}
+                  onApprove={handleApprove}
+                  onDeny={handleDeny}
+                  onCancel={() => {
+                    const sessionId =
+                      request.rootSessionId || window.currentSessionId || "";
+                    const resolvedChatId =
+                      sessionApi.getRealIdForSession(sessionId) ??
+                      chatIdRef.current ??
+                      sessionId;
+
+                    if (resolvedChatId) {
+                      console.log("[Chat] Calling stopChat with:", resolvedChatId);
+                      chatApi
+                        .stopChat(resolvedChatId)
+                        .then(() => {
+                          console.log("[Chat] stopChat succeeded");
+                          setApprovals((prev) =>
+                            prev.filter(
+                              (item) =>
+                                item.root_session_id !== request.rootSessionId,
+                            ),
+                          );
+                        })
+                        .catch((err) => {
+                          console.error("[Chat] stopChat failed:", err);
+                        });
+                    } else {
+                      console.warn(
+                        "[Chat] No chat_id resolved, cannot cancel task",
+                      );
+                    }
+                  }}
+                />
+              </div>
+            ))}
+
+            <Modal
+              open={showModelPrompt}
+              closable={false}
+              footer={null}
+              width={480}
+              styles={{
+                content: isDark
+                  ? {
+                      background: "#1f1f1f",
+                      boxShadow: "0 8px 32px rgba(0,0,0,0.5)",
+                    }
+                  : undefined,
+              }}
+            >
+              <Result
+                icon={<ExclamationCircleOutlined style={{ color: "#faad14" }} />}
+                title={
+                  <span
+                    style={{ color: isDark ? "rgba(255,255,255,0.88)" : undefined }}
+                  >
+                    {t("modelConfig.promptTitle")}
+                  </span>
+                }
+                subTitle={
+                  <span
+                    style={{ color: isDark ? "rgba(255,255,255,0.55)" : undefined }}
+                  >
+                    {t("modelConfig.promptMessage")}
+                  </span>
+                }
+                extra={[
+                  <Button key="skip" onClick={() => setShowModelPrompt(false)}>
+                    {t("modelConfig.skipButton")}
+                  </Button>,
+                  <Button
+                    key="configure"
+                    type="primary"
+                    icon={<SettingOutlined />}
+                    onClick={() => {
+                      setShowModelPrompt(false);
+                      navigate("/models");
+                    }}
+                  >
+                    {t("modelConfig.configureButton")}
+                  </Button>,
+                ]}
+              />
+            </Modal>
+          </div>
+        </div>
+
+        {/* Resizer handle */}
+        <div
+          className={`${styles.resizer} ${isDragging ? styles.active : ""}`}
+          onMouseDown={handleMouseDown}
+        />
+
+        {/* Right panel: Aether Canvas */}
+        <div className={styles.splitPanelRight} style={{ width: `${100 - leftWidth}%` }}>
+          <AetherCanvas />
+        </div>
       </div>
-      {/* End of main chat area */}
 
       {/* Right-side history panel (full mode only) */}
       {isFullMode && historyPanelOpen && (

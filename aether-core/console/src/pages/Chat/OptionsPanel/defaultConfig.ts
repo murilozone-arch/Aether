@@ -2,7 +2,7 @@ import type { TFunction } from "i18next";
 
 const defaultConfig = {
   theme: {
-    colorPrimary: "#FF7F16",
+    colorPrimary: "#1677ff",
     darkMode: false,
     prefix: "qwenpaw",
     leftHeader: {
@@ -77,3 +77,4 @@ export type DefaultConfig = typeof defaultConfig;
 
 // Export provider for extension
 export { configProvider };
+

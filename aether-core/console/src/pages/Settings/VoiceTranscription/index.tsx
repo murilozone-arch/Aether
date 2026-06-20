@@ -7,6 +7,7 @@ import {
   AudioModeCard,
   ProviderTypeCard,
   ProviderSelectCard,
+  AetherVoiceSecurityCard,
 } from "./components";
 import styles from "./index.module.less";
 
@@ -64,6 +65,8 @@ function VoiceTranscriptionPage() {
           onAudioModeChange={setAudioMode}
           localWhisperStatus={localWhisperStatus}
         />
+
+        <AetherVoiceSecurityCard />
 
         {showProviderSection && (
           <>

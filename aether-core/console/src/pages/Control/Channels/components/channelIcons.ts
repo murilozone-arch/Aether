@@ -43,7 +43,7 @@ export function getChannelIconUrl(channelKey: string): string {
 
 /** Predefined background colors for letter-avatar icons. */
 const LETTER_ICON_COLORS: Record<string, string> = {
-  console: "#FF7F16",
+  console: "#1677ff",
   onebot: "#6ECB63",
   dingtalk: "#3370FF",
   feishu: "#3370FF",
@@ -94,3 +94,4 @@ export function getChannelLetterColor(channelKey: string): string {
 export function getChannelLetter(channelKey: string): string {
   return channelKey.charAt(0).toUpperCase();
 }
+

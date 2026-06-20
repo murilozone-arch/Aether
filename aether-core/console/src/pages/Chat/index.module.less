@@ -138,7 +138,7 @@
 .suggestionCommand {
   flex: 0 0 88px;
   min-width: 0;
-  color: #ff7f16;
+  color: #1677ff;
   font-weight: 600;
   white-space: nowrap;
   overflow: hidden;
@@ -175,7 +175,7 @@
 
 :global(.dark-mode) {
   .suggestionCommand {
-    color: #ff7f16;
+    color: #1677ff;
   }
 
   .suggestionDescription {
@@ -188,7 +188,7 @@
   .chat-anywhere-prompt-icon,
   [class*="prompt-icon"],
   [class*="PromptIcon"] {
-    color: #ff7f16 !important;
+    color: #1677ff !important;
   }
 }
 
@@ -263,5 +263,79 @@
 
   .rateLimitText {
     color: #ffc53d;
+  }
+}
+
+
+/* Split view container (side-by-side layout) */
+.splitViewContainer {
+  display: flex;
+  flex-direction: row;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+  flex: 1;
+}
+
+/* Split view panels */
+.splitPanelLeft {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+}
+
+.splitPanelRight {
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+}
+
+/* Draggable resizer vertical bar */
+.resizer {
+  width: 6px;
+  cursor: col-resize;
+  background: #f0f0f0;
+  position: relative;
+  align-self: stretch;
+  z-index: 100;
+  transition: background 0.2s;
+
+  &:hover,
+  &.active {
+    background: #1677ff;
+  }
+
+  &::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 2px;
+    height: 24px;
+    background: #bfbfbf;
+    border-radius: 1px;
+    transition: background 0.2s;
+  }
+
+  &:hover::after,
+  &.active::after {
+    background: #ffffff;
+  }
+
+  :global(.dark-mode) & {
+    background: #303030;
+    
+    &:hover,
+    &.active {
+      background: #1677ff;
+    }
+
+    &::after {
+      background: #555555;
+    }
   }
 }

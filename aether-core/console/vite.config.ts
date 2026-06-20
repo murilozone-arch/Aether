@@ -51,6 +51,13 @@ export default defineConfig(({ mode }) => {
           target: "http://localhost:8088",
           changeOrigin: false,
         },
+        "/ws": {
+          target: "ws://localhost:8088",
+          ws: true,
+        },
+        "/modules": {
+          target: "http://localhost:8088",
+        },
       },
     },
     test: {
