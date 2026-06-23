@@ -184,7 +184,6 @@ async def proxy_fetch(
             follow_redirects=True,
             timeout=httpx.Timeout(20.0),
             verify=False,  # Allow self-signed certs on intranet
-            limits=httpx.Limits(max_response_bytes=_MAX_BODY_BYTES),
         ) as client:
             resp = await client.get(url, headers=headers)
     except httpx.TimeoutException:
@@ -241,7 +240,6 @@ async def proxy_resource(
             follow_redirects=True,
             timeout=httpx.Timeout(15.0),
             verify=False,
-            limits=httpx.Limits(max_response_bytes=_MAX_BODY_BYTES),
         ) as client:
             resp = await client.get(url, headers=headers)
     except Exception as exc:
