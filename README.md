@@ -96,7 +96,7 @@ graph TD
     Footprint -->|❌ Bloqueado| Silent[Ignorar / Alerta Silencioso]
     STT --> SendToAgent[Backend Aether]
     SendToAgent --> AgentReply[Resposta do Agente]
-    AgentReply --> TTS[TTS Premium / Jarvis Mode]
+    AgentReply --> TTS[TTS Premium / Aether Mode]
     TTS --> Speaker[🔊 Áudio de Resposta]
 
     style Footprint fill:#0A2240,color:#79D7FF
@@ -111,7 +111,7 @@ graph TD
 | **Wake Word** | `openwakeword-wasm-browser` | Detecta "Aether" offline no browser |
 | **Biometria** | `@jaehyun-ko/speaker-verification` | Verifica embeddings de voz |
 | **STT** | Google Web Speech API | Transcrição em português |
-| **TTS** | Modo Jarvis (remoto/local) | Síntese de voz premium |
+| **TTS** | Modo Aether (remoto/local) | Síntese de voz premium |
 
 ---
 
@@ -210,7 +210,7 @@ Aether/
 - [x] Logo e Identidade Visual Oficial
 - [ ] Navegador Live Interativo — Canvas + proxy reverso
 - [ ] Modo Privado — Pausa o acesso do agente ao screen
-- [ ] TTS Jarvis v3 — Síntese de voz remota premium
+- [ ] TTS Aether v3 — Síntese de voz remota premium
 - [ ] App Desktop (Tauri) — Versão nativa Windows/macOS
 
 ---

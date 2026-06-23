@@ -48,7 +48,7 @@ export const AetherTtsCard: React.FC = () => {
         Síntese de Voz (TTS) do Agente
       </h3>
       <p className={styles.cardDescription}>
-        Escolha entre a síntese de voz local nativa do navegador ou uma API de voz remota (ex: Jarvis, ElevenLabs, OpenAI).
+        Escolha entre a síntese de voz local nativa do navegador ou uma API de voz remota (ex: Aether, ElevenLabs, OpenAI).
       </p>
 
       <Space direction="vertical" size="large" style={{ width: "100%" }}>
@@ -88,7 +88,7 @@ export const AetherTtsCard: React.FC = () => {
               <Input
                 value={remoteVoice}
                 onChange={handleVoiceChange}
-                placeholder="Ex: pt-BR-Jarvis"
+                placeholder="Ex: pt-BR-Aether"
                 style={{ width: "100%", maxWidth: 300 }}
               />
               <span className={styles.optionDescription} style={{ display: "block", marginTop: 4 }}>
