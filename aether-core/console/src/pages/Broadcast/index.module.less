@@ -1,0 +1,80 @@
+.broadcastContainer {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  background: #000000;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.broadcastFrame {
+  border: none;
+  width: 100%;
+  height: 100%;
+  background: #ffffff;
+}
+
+.statusOverlay {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: rgba(0, 0, 0, 0.6);
+  color: #ff4d4f;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 10px;
+  font-weight: 600;
+  pointer-events: none;
+  z-index: 100;
+  transition: all 0.3s ease;
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+
+  &.connected {
+    color: #52c41a;
+    background: rgba(0, 0, 0, 0.4);
+    opacity: 0.3;
+  }
+}
+
+.loadingState, .emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: rgba(255, 255, 255, 0.65);
+  text-align: center;
+  padding: 32px;
+
+  p {
+    margin-top: 12px;
+    font-size: 14px;
+  }
+}
+
+.emptyState {
+  h3 {
+    margin: 16px 0 8px 0;
+    font-size: 20px;
+    font-weight: 600;
+    color: #ffffff;
+  }
+
+  p {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.45);
+    max-width: 320px;
+    line-height: 1.5;
+  }
+}
+
+.emptyIcon {
+  font-size: 48px;
+  color: #1677ff;
+}

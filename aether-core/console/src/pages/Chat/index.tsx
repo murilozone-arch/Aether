@@ -69,6 +69,7 @@ interface ApprovalMessageData {
 
 import AetherCanvas from "../../components/AetherCanvas";
 import AetherVoiceButton from "../../components/AetherVoiceButton";
+import AetherTtsButton from "../../components/AetherTtsButton";
 
 import {
   toDisplayUrl,
@@ -1057,6 +1058,10 @@ export default function ChatPage() {
   }, []);
 
   const [leftWidth, setLeftWidth] = useState<number>(50); // percentage
+  const [canvasVisible, setCanvasVisible] = useState<boolean>(true);
+  const toggleCanvas = useCallback(() => {
+    setCanvasVisible((prev) => !prev);
+  }, []);
   const [isDragging, setIsDragging] = useState<boolean>(false);
   const containerRef = useRef<HTMLDivElement>(null);
 
@@ -2470,6 +2475,8 @@ export default function ChatPage() {
               historyOpen={isFullMode ? historyPanelOpen : false}
               isWideMode={isWideMode}
               onToggleWideMode={toggleWideMode}
+              canvasVisible={canvasVisible}
+              onToggleCanvas={toggleCanvas}
             />
             {pluginRightHeader}
           </>
@@ -2514,6 +2521,7 @@ export default function ChatPage() {
         prefix: (
           <>
             <AetherVoiceButton />
+            <AetherTtsButton />
             {pluginSenderPrefix}
           </>
         ),
@@ -2742,7 +2750,7 @@ export default function ChatPage() {
     <div className={styles.chatPageRoot}>
       <div ref={containerRef} className={styles.splitViewContainer}>
         {/* Left panel: conversational interface */}
-        <div className={styles.splitPanelLeft} style={{ width: `${leftWidth}%` }}>
+        <div className={styles.splitPanelLeft} style={{ width: canvasVisible ? `${leftWidth}%` : "100%" }}>
           <div className={styles.chatMainArea}>
             <div
               className={
@@ -2916,15 +2924,19 @@ export default function ChatPage() {
         </div>
 
         {/* Resizer handle */}
-        <div
-          className={`${styles.resizer} ${isDragging ? styles.active : ""}`}
-          onMouseDown={handleMouseDown}
-        />
+        {canvasVisible && (
+          <div
+            className={`${styles.resizer} ${isDragging ? styles.active : ""}`}
+            onMouseDown={handleMouseDown}
+          />
+        )}
 
         {/* Right panel: Aether Canvas */}
-        <div className={styles.splitPanelRight} style={{ width: `${100 - leftWidth}%` }}>
-          <AetherCanvas />
-        </div>
+        {canvasVisible && (
+          <div className={styles.splitPanelRight} style={{ width: `${100 - leftWidth}%` }}>
+            <AetherCanvas />
+          </div>
+        )}
       </div>
 
       {/* Right-side history panel (full mode only) */}

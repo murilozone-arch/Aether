@@ -299,6 +299,11 @@ LLM_BACKOFF_CAP = EnvVarLoader.get_float(
     min_value=0.5,
 )
 
+# Whether OpenAI/Gemini/Anthropic-compatible model calls should use SSE
+# streaming. Disable this (QWENPAW_LLM_STREAM=false) to avoid mid-response
+# stream failures such as httpx.RemoteProtocolError/incomplete chunked read.
+LLM_STREAM = EnvVarLoader.get_bool("QWENPAW_LLM_STREAM", True)
+
 # LLM concurrency control
 # Maximum number of concurrent in-flight LLM calls; excess requests wait on
 # the semaphore.  Tune to your API quota: start conservatively at 3-5 and

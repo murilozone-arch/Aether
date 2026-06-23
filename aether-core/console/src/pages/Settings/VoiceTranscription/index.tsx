@@ -8,6 +8,7 @@ import {
   ProviderTypeCard,
   ProviderSelectCard,
   AetherVoiceSecurityCard,
+  AetherTtsCard,
 } from "./components";
 import styles from "./index.module.less";
 
@@ -67,6 +68,8 @@ function VoiceTranscriptionPage() {
         />
 
         <AetherVoiceSecurityCard />
+
+        <AetherTtsCard />
 
         {showProviderSection && (
           <>

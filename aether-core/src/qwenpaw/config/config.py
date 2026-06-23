@@ -1555,6 +1555,18 @@ def _default_builtin_tools() -> Dict[str, BuiltinToolConfig]:
             ),
             icon="🔀",
         ),
+        "create_presentation": BuiltinToolConfig(
+            name="create_presentation",
+            enabled=True,
+            description="Create a beautiful, interactive slide presentation on the Aether Canvas.",
+            icon="📊",
+        ),
+        "canvas_writer": BuiltinToolConfig(
+            name="canvas_writer",
+            enabled=True,
+            description="Write HTML5/JS code to the Aether Canvas",
+            icon="🎨",
+        ),
     }
 
     # Merge dynamically registered tools from plugins

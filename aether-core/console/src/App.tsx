@@ -30,6 +30,7 @@ import { Suspense } from "react";
 import { lazyImportWithRetry } from "./utils/lazyWithRetry";
 
 const LoginPage = lazyImportWithRetry("./pages/Login/index");
+const CanvasBroadcastPage = lazyImportWithRetry("./pages/Broadcast/index");
 import { authApi } from "./api/modules/auth";
 import { languageApi } from "./api/modules/language";
 import { useUploadLimitStore } from "./stores/uploadLimitStore";
@@ -197,6 +198,16 @@ function AppInner() {
                   <Suspense fallback={null}>
                     <LoginPage />
                   </Suspense>
+                }
+              />
+              <Route
+                path="/broadcast"
+                element={
+                  <AuthGuard>
+                    <Suspense fallback={null}>
+                      <CanvasBroadcastPage />
+                    </Suspense>
+                  </AuthGuard>
                 }
               />
               <Route

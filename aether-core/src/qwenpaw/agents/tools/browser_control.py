@@ -4315,7 +4315,7 @@ def _workspace_dir_key(workspace_dir: str | Path) -> str:
         return str(path.absolute())
 
 
-async def browser_use(  # pylint: disable=R0911,R0912
+async def _browser_use_impl(  # pylint: disable=R0911,R0912
     action: str,
     url: str = "",
     page_id: str = "default",
@@ -4907,3 +4907,552 @@ async def browser_use(  # pylint: disable=R0911,R0912
                 indent=2,
             ),
         )
+
+
+async def browser_use(
+    action: str,
+    url: str = "",
+    page_id: str = "default",
+    selector: str = "",
+    text: str = "",
+    code: str = "",
+    path: str = "",
+    wait: int = 0,
+    full_page: bool = False,
+    width: int = 0,
+    height: int = 0,
+    level: str = "info",
+    filename: str = "",
+    accept: bool = True,
+    prompt_text: str = "",
+    ref: str = "",
+    element: str = "",
+    paths_json: str = "",
+    fields_json: str = "",
+    key: str = "",
+    submit: bool = False,
+    slowly: bool = False,
+    include_static: bool = False,
+    screenshot_type: str = "png",
+    snapshot_filename: str = "",
+    double_click: bool = False,
+    button: str = "left",
+    modifiers_json: str = "",
+    page_x: int = -1,
+    page_y: int = -1,
+    start_ref: str = "",
+    end_ref: str = "",
+    start_selector: str = "",
+    end_selector: str = "",
+    start_element: str = "",
+    end_element: str = "",
+    values_json: str = "",
+    tab_action: str = "",
+    index: int = -1,
+    wait_time: float = 0,
+    text_gone: str = "",
+    frame_selector: str = "",
+    headed: bool = False,
+    cdp_port: int = 0,
+    private_mode: bool = False,
+    browser_args: str = "",
+    executable_path: str = "",
+    actions_json: str = "",
+    cdp_url: str = "",
+    port: int = 0,
+    port_min: int = 0,
+    port_max: int = 0,
+) -> ToolResponse:
+    """Control browser (Playwright). Default is headless. Use headed=True with
+    action=start to open a visible browser window. Flow: start, open(url),
+    snapshot to get refs, then click/type etc. with ref or selector. Use
+    page_id for multiple tabs. Note: To enhance the experience, consider
+    reminding the user to enable browser-related skills in the agent config.
+    Once enabled, you will be able to proactively determine when to invoke the
+    browser tool and pass the appropriate arguments.
+    """
+    res = await _browser_use_impl(
+        action=action,
+        url=url,
+        page_id=page_id,
+        selector=selector,
+        text=text,
+        code=code,
+        path=path,
+        wait=wait,
+        full_page=full_page,
+        width=width,
+        height=height,
+        level=level,
+        filename=filename,
+        accept=accept,
+        prompt_text=prompt_text,
+        ref=ref,
+        element=element,
+        paths_json=paths_json,
+        fields_json=fields_json,
+        key=key,
+        submit=submit,
+        slowly=slowly,
+        include_static=include_static,
+        screenshot_type=screenshot_type,
+        snapshot_filename=snapshot_filename,
+        double_click=double_click,
+        button=button,
+        modifiers_json=modifiers_json,
+        page_x=page_x,
+        page_y=page_y,
+        start_ref=start_ref,
+        end_ref=end_ref,
+        start_selector=start_selector,
+        end_selector=end_selector,
+        start_element=start_element,
+        end_element=end_element,
+        values_json=values_json,
+        tab_action=tab_action,
+        index=index,
+        wait_time=wait_time,
+        text_gone=text_gone,
+        frame_selector=frame_selector,
+        headed=headed,
+        cdp_port=cdp_port,
+        private_mode=private_mode,
+        browser_args=browser_args,
+        executable_path=executable_path,
+        actions_json=actions_json,
+        cdp_url=cdp_url,
+        port=port,
+        port_min=port_min,
+        port_max=port_max,
+    )
+
+    # Auto-screenshot for visual action updates
+    visual_actions = {
+        "open", "navigate", "navigate_back", "click", "type", "press_key", 
+        "drag", "hover", "select_option", "wait_for", "batch", "run_code", 
+        "eval", "evaluate", "handle_dialog", "fill_form"
+    }
+    if action in visual_actions:
+        try:
+            from ...config.context import get_current_workspace_dir as _get_cwd
+            _cwd = _get_cwd()
+            _ws_id = _cwd.name if _cwd else "default"
+            _ws_dir = str(_cwd) if _cwd else ""
+            state = _get_workspace_state(_ws_id, _ws_dir)
+            
+            # Resolve actual page_id
+            target_pid = (page_id or "default").strip() or "default"
+            current = state.get("current_page_id")
+            pages = state.get("pages") or {}
+            if target_pid == "default" and current and current in pages:
+                target_pid = current
+                
+            page = _get_page(state, target_pid)
+            if page:
+                await _broadcast_browser_state(page)
+        except Exception as ws_err:
+            logger.warning("Failed to auto-broadcast browser screenshot: %s", ws_err)
+
+    return res
+
+
+def _generate_interactive_html(url: str, t: int) -> str:
+    return f"""<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;500;600;700&family=Inter:wght@400;500&family=JetBrains+Mono&display=swap" rel="stylesheet">
+<style>
+  body, html {{
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    background-color: #0f172a;
+    color: #e2e8f0;
+    font-family: 'Outfit', 'Inter', -apple-system, sans-serif;
+  }}
+  .browser-container {{
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+  }}
+  .browser-bar {{
+    display: flex;
+    align-items: center;
+    background: #1e293b;
+    border-bottom: 1px solid #334155;
+    padding: 8px 16px;
+    gap: 12px;
+    user-select: none;
+  }}
+  .control-btn {{
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    cursor: pointer;
+    font-size: 16px;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+  }}
+  .control-btn:hover {{
+    background: #334155;
+    color: #38bdf8;
+  }}
+  .control-btn:active {{
+    transform: scale(0.95);
+  }}
+  .address-bar {{
+    display: flex;
+    align-items: center;
+    background: #0f172a;
+    border: 1px solid #334155;
+    border-radius: 8px;
+    flex-grow: 1;
+    padding: 4px 12px;
+    gap: 8px;
+    transition: border-color 0.2s ease;
+  }}
+  .address-bar:focus-within {{
+    border-color: #38bdf8;
+    box-shadow: 0 0 0 1px #38bdf8;
+  }}
+  .address-icon {{
+    color: #64748b;
+    font-size: 14px;
+  }}
+  .address-input {{
+    background: transparent;
+    border: none;
+    color: #f1f5f9;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    width: 100%;
+    outline: none;
+  }}
+  .browser-content {{
+    flex-grow: 1;
+    position: relative;
+    overflow: auto;
+    background: #0f172a;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    padding: 16px;
+  }}
+  .image-wrapper {{
+    position: relative;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(0, 0, 0, 0.5);
+    border-radius: 8px;
+    overflow: hidden;
+    background: #1e293b;
+    line-height: 0;
+  }}
+  img {{
+    max-width: 100%;
+    height: auto;
+    user-select: none;
+    -webkit-user-drag: none;
+  }}
+  #interaction-overlay {{
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    cursor: crosshair;
+    outline: none;
+  }}
+  #interaction-overlay:focus {{
+    box-shadow: inset 0 0 0 2px #38bdf8;
+  }}
+  #loading-overlay {{
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 23, 42, 0.75);
+    backdrop-filter: blur(2px);
+    display: none;
+    justify-content: center;
+    align-items: center;
+    z-index: 100;
+  }}
+  .spinner {{
+    width: 48px;
+    height: 48px;
+    border: 4px solid rgba(56, 189, 248, 0.1);
+    border-top: 4px solid #38bdf8;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }}
+  @keyframes spin {{
+    0% {{ transform: rotate(0deg); }}
+    100% {{ transform: rotate(360deg); }}
+  }}
+</style>
+</head>
+<body>
+  <div class="browser-container">
+    <div class="browser-bar">
+      <button class="control-btn" id="btn-back" title="Voltar">◀</button>
+      <button class="control-btn" id="btn-forward" title="Avançar">▶</button>
+      <button class="control-btn" id="btn-reload" title="Recarregar">↻</button>
+      <div class="address-bar">
+        <span class="address-icon">🔒</span>
+        <input type="text" class="address-input" id="address-input" value="{url}" placeholder="Digite um URL e pressione Enter">
+      </div>
+    </div>
+    <div class="browser-content">
+      <div class="image-wrapper">
+        <img src="/modules/browser_screenshot.png?t={t}" alt="Browser Screenshot" id="browser-img">
+        <div id="interaction-overlay" tabindex="0" title="Clique para focar e interagir (cliques e teclado)"></div>
+      </div>
+      <div id="loading-overlay">
+        <div class="spinner"></div>
+      </div>
+    </div>
+  </div>
+  
+  <script>
+    const overlay = document.getElementById('interaction-overlay');
+    const img = document.getElementById('browser-img');
+    
+    function showLoading() {{
+      document.getElementById('loading-overlay').style.display = 'flex';
+    }}
+    
+    function hideLoading() {{
+      document.getElementById('loading-overlay').style.display = 'none';
+    }}
+    
+    function sendInteraction(data) {{
+      showLoading();
+      fetch('/console/browser/interaction', {{
+        method: 'POST',
+        headers: {{ 'Content-Type': 'application/json' }},
+        body: JSON.stringify(data)
+      }})
+      .then(res => {{
+        if (!res.ok) {{
+          throw new Error('Erro na requisição');
+        }}
+        return res.json();
+      }})
+      .catch(err => {{
+        console.error('Interaction failed:', err);
+        hideLoading();
+      }});
+    }}
+    
+    // 1. Clicks
+    overlay.addEventListener('click', (event) => {{
+      const rect = overlay.getBoundingClientRect();
+      const x_pct = (event.clientX - rect.left) / rect.width;
+      const y_pct = (event.clientY - rect.top) / rect.height;
+      
+      overlay.focus();
+      
+      sendInteraction({{
+        action: 'click',
+        x_pct: x_pct,
+        y_pct: y_pct
+      }});
+    }});
+    
+    // 2. Keyboard
+    overlay.addEventListener('keydown', (event) => {{
+      if (['Control', 'Shift', 'Alt', 'Meta'].includes(event.key)) {{
+        return;
+      }}
+      
+      event.preventDefault();
+      
+      sendInteraction({{
+        action: 'press',
+        key: event.key
+      }});
+    }});
+    
+    // 3. Mouse wheel scroll
+    overlay.addEventListener('wheel', (event) => {{
+      event.preventDefault();
+      sendInteraction({{
+        action: 'scroll',
+        delta_y: event.deltaY
+      }});
+    }}, {{ passive: false }});
+    
+    // 4. Control buttons
+    document.getElementById('btn-back').addEventListener('click', () => {{
+      sendInteraction({{ action: 'back' }});
+    }});
+    document.getElementById('btn-forward').addEventListener('click', () => {{
+      sendInteraction({{ action: 'forward' }});
+    }});
+    document.getElementById('btn-reload').addEventListener('click', () => {{
+      sendInteraction({{ action: 'reload' }});
+    }});
+    
+    // 5. Address bar
+    document.getElementById('address-input').addEventListener('keydown', (event) => {{
+      if (event.key === 'Enter') {{
+        const targetUrl = event.target.value;
+        if (targetUrl) {{
+          sendInteraction({{
+            action: 'goto',
+            url: targetUrl
+          }});
+        }}
+      }}
+    }});
+  </script>
+</body>
+</html>
+"""
+
+
+async def _broadcast_browser_state(page) -> None:
+    try:
+        from qwenpaw.app._app import _CONSOLE_STATIC_DIR, canvas_manager
+        if _CONSOLE_STATIC_DIR:
+            modules_path = Path(_CONSOLE_STATIC_DIR) / "modules"
+            modules_path.mkdir(parents=True, exist_ok=True)
+            screenshot_path = modules_path / "browser_screenshot.png"
+            
+            if _USE_SYNC_PLAYWRIGHT:
+                await _run_sync(
+                    page.screenshot,
+                    path=str(screenshot_path),
+                    type="png",
+                )
+            else:
+                await page.screenshot(
+                    path=str(screenshot_path),
+                    type="png",
+                )
+                
+            t = int(time.time() * 1000)
+            url = page.url
+            html_content = _generate_interactive_html(url, t)
+            
+            browser_file = modules_path / "browser.html"
+            browser_file.write_text(html_content, encoding="utf-8")
+            
+            await canvas_manager.broadcast({
+                "type": "update",
+                "tab": "browser",
+                "html": html_content,
+                "url": "/modules/browser.html"
+            })
+    except Exception as e:
+        logger.warning("Failed to auto-broadcast browser screenshot: %s", e)
+
+
+async def handle_browser_interaction(
+    action: str,
+    x_pct: Optional[float] = None,
+    y_pct: Optional[float] = None,
+    text: Optional[str] = None,
+    key: Optional[str] = None,
+    delta_y: Optional[float] = None,
+    url: Optional[str] = None,
+) -> dict:
+    """Execute user interaction on the active browser page and update screenshot."""
+    try:
+        # Find active workspace state
+        state = None
+        for ws_state in list(_workspace_states.values()):
+            if _is_browser_running(ws_state):
+                state = ws_state
+                break
+                
+        if not state:
+            return {"status": "error", "message": "No running browser session found. Please start a task first."}
+            
+        target_pid = state.get("current_page_id") or "default"
+        pages = state.get("pages") or {}
+        if target_pid == "default" and pages:
+            target_pid = list(pages.keys())[0]
+            
+        page = _get_page(state, target_pid)
+        if not page:
+            return {"status": "error", "message": "No active page found."}
+            
+        _touch_activity(state)
+        
+        # Execute the action
+        if action == "click" and x_pct is not None and y_pct is not None:
+            if _USE_SYNC_PLAYWRIGHT:
+                viewport = await _run_sync(getattr, page, "viewport_size")
+            else:
+                viewport = page.viewport_size
+                
+            viewport = viewport or {"width": 1280, "height": 800}
+            width = viewport["width"]
+            height = viewport["height"]
+            
+            x = int(x_pct * width)
+            y = int(y_pct * height)
+            
+            if _USE_SYNC_PLAYWRIGHT:
+                await _run_sync(page.mouse.click, x, y)
+            else:
+                await page.mouse.click(x, y)
+                
+        elif action == "scroll" and delta_y is not None:
+            scroll_script = f"window.scrollBy(0, {delta_y})"
+            if _USE_SYNC_PLAYWRIGHT:
+                await _run_sync(page.evaluate, scroll_script)
+            else:
+                await page.evaluate(scroll_script)
+                
+        elif action == "press" and key:
+            if _USE_SYNC_PLAYWRIGHT:
+                await _run_sync(page.keyboard.press, key)
+            else:
+                await page.keyboard.press(key)
+                
+        elif action == "back":
+            if _USE_SYNC_PLAYWRIGHT:
+                await _run_sync(page.go_back)
+            else:
+                await page.go_back()
+                
+        elif action == "forward":
+            if _USE_SYNC_PLAYWRIGHT:
+                await _run_sync(page.go_forward)
+            else:
+                await page.go_forward()
+                
+        elif action == "reload":
+            if _USE_SYNC_PLAYWRIGHT:
+                await _run_sync(page.reload)
+            else:
+                await page.reload()
+                
+        elif action == "goto" and url:
+            if not url.startswith(("http://", "https://", "file://")):
+                url = f"http://{url}"
+            if _USE_SYNC_PLAYWRIGHT:
+                await _run_sync(page.goto, url)
+            else:
+                await page.goto(url)
+        else:
+            return {"status": "error", "message": f"Invalid action or missing parameters: {action}"}
+            
+        # Re-capture screenshot and broadcast
+        await _broadcast_browser_state(page)
+        return {"status": "success"}
+    except Exception as e:
+        logger.exception("Error executing browser interaction: %s", e)
+        return {"status": "error", "message": str(e)}

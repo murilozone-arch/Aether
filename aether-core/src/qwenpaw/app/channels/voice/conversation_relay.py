@@ -199,8 +199,10 @@ class ConversationRelayHandler:
                 if obj == "message" and status == RunStatus.Completed:
                     text = self._extract_text_from_event(event)
                     if text:
-                        await self._send_token(text, last=False)
-                        await self._send_token("", last=True)
+                        text = self._clean_for_tts(text)
+                        if text:
+                            await self._send_token(text, last=False)
+                            await self._send_token("", last=True)
                 elif obj == "response":
                     err = getattr(event, "error", None)
                     if err:
@@ -243,6 +245,21 @@ class ConversationRelayHandler:
                 if refusal:
                     parts.append(refusal.strip())
         return " ".join(parts)
+
+    @staticmethod
+    def _clean_for_tts(text: str) -> str:
+        """Extract <speak> tag contents if present, otherwise clean HTML tags."""
+        import re
+        speak_parts = re.findall(r"<speak>(.*?)</speak>", text, re.DOTALL | re.IGNORECASE)
+        if speak_parts:
+            text = " ".join(part.strip() for part in speak_parts)
+        else:
+            # Strip other HTML tags
+            text = re.sub(r"<[^>]+>", "", text)
+        
+        # Collapse multiple spaces
+        text = re.sub(r"\s+", " ", text).strip()
+        return text
 
     async def _send_token(
         self,

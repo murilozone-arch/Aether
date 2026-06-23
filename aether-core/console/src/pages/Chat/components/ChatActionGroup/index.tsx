@@ -5,7 +5,7 @@ import {
   SparkNewChatFill,
   SparkSearchLine,
 } from "@agentscope-ai/icons";
-import { ExpandAltOutlined, CompressOutlined } from "@ant-design/icons";
+import { ExpandAltOutlined, CompressOutlined, FundProjectionScreenOutlined } from "@ant-design/icons";
 import { useChatAnywhereSessions } from "@agentscope-ai/chat";
 import { useTranslation } from "react-i18next";
 import { Flex, Tooltip } from "antd";
@@ -36,6 +36,8 @@ interface ChatActionGroupProps {
   historyOpen?: boolean;
   isWideMode?: boolean;
   onToggleWideMode?: () => void;
+  canvasVisible?: boolean;
+  onToggleCanvas?: () => void;
 }
 
 const ChatActionGroup: React.FC<ChatActionGroupProps> = ({
@@ -44,6 +46,8 @@ const ChatActionGroup: React.FC<ChatActionGroupProps> = ({
   historyOpen = false,
   isWideMode = false,
   onToggleWideMode,
+  canvasVisible = true,
+  onToggleCanvas,
 }) => {
   const { t } = useTranslation();
 
@@ -76,6 +80,20 @@ const ChatActionGroup: React.FC<ChatActionGroupProps> = ({
           onClick={() => setSearchOpen(true)}
         />
       </Tooltip>
+      {onToggleCanvas && (
+        <Tooltip title={canvasVisible ? "Desativar Modo Apresentação" : "Ativar Modo Apresentação"} mouseEnterDelay={0.5}>
+          <IconButton
+            bordered={false}
+            icon={<FundProjectionScreenOutlined />}
+            style={
+              canvasVisible
+                ? { color: "var(--color-primary, #ff9d4d)" }
+                : undefined
+            }
+            onClick={onToggleCanvas}
+          />
+        </Tooltip>
+      )}
       {onToggleHistory && (
         <Tooltip title={t("chat.chatHistoryTooltip")} mouseEnterDelay={0.5}>
           <IconButton

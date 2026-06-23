@@ -3,7 +3,7 @@ import React, { useEffect, useState, useRef } from "react";
 declare const VITE_API_BASE_URL: string;
 import { useTheme } from "../../contexts/ThemeContext";
 import { Badge, Spin } from "antd";
-import { LoadingOutlined, DesktopOutlined, WifiOutlined } from "@ant-design/icons";
+import { LoadingOutlined, DesktopOutlined, WifiOutlined, GlobalOutlined, ShareAltOutlined } from "@ant-design/icons";
 import styles from "./index.module.less";
 
 export interface AetherCanvasProps {
@@ -13,12 +13,42 @@ export interface AetherCanvasProps {
 export const AetherCanvas: React.FC<AetherCanvasProps> = ({ className }) => {
   const { isDark } = useTheme();
   const [wsStatus, setWsStatus] = useState<"connecting" | "connected" | "disconnected">("connecting");
-  const [htmlContent, setHtmlContent] = useState<string | null>(null);
-  const [iframeKey, setIframeKey] = useState<number>(0);
+  const [activeTab, setActiveTab] = useState<"slides" | "browser">("slides");
+  const [slidesContent, setSlidesContent] = useState<string | null>(null);
+  const [browserContent, setBrowserContent] = useState<string | null>(null);
   const wsRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
     let reconnectTimeout: NodeJS.Timeout;
+
+    // Check if there are existing canvas.html and browser.html files on the server
+    const checkInitialCanvas = async () => {
+      try {
+        const [slidesResp, browserResp] = await Promise.all([
+          fetch("/modules/canvas.html").catch(() => null),
+          fetch("/modules/browser.html").catch(() => null),
+        ]);
+
+        if (slidesResp && slidesResp.ok) {
+          const text = await slidesResp.text();
+          setSlidesContent(text.trim() ? text : "");
+        } else {
+          setSlidesContent("");
+        }
+
+        if (browserResp && browserResp.ok) {
+          const text = await browserResp.text();
+          setBrowserContent(text.trim() ? text : "");
+        } else {
+          setBrowserContent("");
+        }
+      } catch (err) {
+        console.warn("[AetherCanvas] Failed to fetch initial canvas:", err);
+        setSlidesContent("");
+        setBrowserContent("");
+      }
+    };
+    checkInitialCanvas();
 
     const connectWs = () => {
       setWsStatus("connecting");
@@ -26,8 +56,6 @@ export const AetherCanvas: React.FC<AetherCanvasProps> = ({ className }) => {
       // Determine WebSocket URL dynamically
       let wsUrl = "";
       try {
-        // If VITE_API_BASE_URL is defined, use it to construct WS url
-        // Otherwise use same host
         const base = typeof VITE_API_BASE_URL !== "undefined" ? VITE_API_BASE_URL : "";
         const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
         
@@ -56,11 +84,14 @@ export const AetherCanvas: React.FC<AetherCanvasProps> = ({ className }) => {
           const data = JSON.parse(event.data);
           console.log("[AetherCanvas] Received WS message:", data);
           if (data.type === "update") {
-            if (data.html) {
-              setHtmlContent(data.html);
+            const tab = data.tab || "slides";
+            const html = data.html || "";
+            if (tab === "browser") {
+              setBrowserContent(html);
+              setActiveTab("browser");
             } else {
-              setHtmlContent(null);
-              setIframeKey((prev) => prev + 1);
+              setSlidesContent(html);
+              setActiveTab("slides");
             }
           }
         } catch (err) {
@@ -84,7 +115,6 @@ export const AetherCanvas: React.FC<AetherCanvasProps> = ({ className }) => {
 
     return () => {
       if (wsRef.current) {
-        // Disable onclose handler to prevent reconnect loop during unmount
         wsRef.current.onclose = null;
         wsRef.current.close();
       }
@@ -109,15 +139,41 @@ export const AetherCanvas: React.FC<AetherCanvasProps> = ({ className }) => {
     }
   };
 
+  const currentContent = activeTab === "slides" ? slidesContent : browserContent;
+
   return (
     <div className={`${styles.canvasContainer} ${isDark ? styles.dark : ""} ${className || ""}`}>
       {/* Canvas Header */}
       <div className={styles.canvasHeader}>
         <div className={styles.headerLeft}>
-          <DesktopOutlined className={styles.headerIcon} />
           <span className={styles.headerTitle}>Aether Canvas</span>
+          <div className={styles.headerSeparator} />
+          <div className={styles.tabList}>
+            <button
+              className={`${styles.tabItem} ${activeTab === "slides" ? styles.active : ""}`}
+              onClick={() => setActiveTab("slides")}
+            >
+              <DesktopOutlined className={styles.tabIcon} />
+              <span>Slides / Relatórios</span>
+            </button>
+            <button
+              className={`${styles.tabItem} ${activeTab === "browser" ? styles.active : ""}`}
+              onClick={() => setActiveTab("browser")}
+            >
+              <GlobalOutlined className={styles.tabIcon} />
+              <span>Navegador Live</span>
+            </button>
+          </div>
         </div>
         <div className={styles.headerRight}>
+          <button
+            className={styles.broadcastButton}
+            onClick={() => window.open(`/console/broadcast?tab=${activeTab}`, "_blank")}
+            title="Transmitir esta aba para TV/Projetor"
+          >
+            <ShareAltOutlined />
+            <span>Transmitir</span>
+          </button>
           <WifiOutlined style={{ marginRight: 4, color: wsStatus === "connected" ? "#52c41a" : "#ff4d4f" }} />
           {getStatusBadge()}
         </div>
@@ -125,39 +181,55 @@ export const AetherCanvas: React.FC<AetherCanvasProps> = ({ className }) => {
 
       {/* Canvas Body */}
       <div className={styles.canvasBody}>
-        {htmlContent !== null ? (
+        {currentContent !== null && currentContent !== "" ? (
           <iframe
-            key={`doc-${iframeKey}`}
-            srcDoc={htmlContent}
+            key={activeTab} // Unique key per tab to force re-render when switching tabs
+            srcDoc={currentContent}
             className={styles.canvasFrame}
-            title="Aether Dynamic Content"
+            title={activeTab === "slides" ? "Aether Slides" : "Aether Live Browser"}
             sandbox="allow-scripts allow-same-origin allow-forms allow-downloads"
           />
         ) : (
-          <iframe
-            key={`src-${iframeKey}`}
-            src="/modules/canvas.html"
-            className={styles.canvasFrame}
-            title="Aether Static Content"
-            sandbox="allow-scripts allow-same-origin allow-forms allow-downloads"
-            onError={() => setHtmlContent("")} // fallback if file not exists
-          />
+          currentContent === null ? (
+            <div className={styles.emptyState}>
+              <Spin indicator={<LoadingOutlined style={{ fontSize: 24, color: "#1677ff" }} spin />} />
+              <p style={{ marginTop: 12 }}>Carregando {activeTab === "slides" ? "Slides" : "Navegador"}...</p>
+            </div>
+          ) : null
         )}
 
         {/* Fallback default UI when canvas is empty or not yet written */}
-        {htmlContent === "" && (
+        {currentContent === "" && (
           <div className={styles.emptyState}>
-            <div className={styles.emptyVisual}>
-              <div className={styles.emptyCircle} />
-              <DesktopOutlined className={styles.emptyIcon} />
-            </div>
-            <h3>Canvas do Aether</h3>
-            <p>
-              Esta área exibe apresentações, gráficos, documentos e componentes interativos gerados em tempo real pelo seu assistente.
-            </p>
-            <div className={styles.canvasTip}>
-              Experimente dizer: <code>"Aether, crie um slide de apresentação sobre o projeto"</code>
-            </div>
+            {activeTab === "slides" ? (
+              <>
+                <div className={styles.emptyVisual}>
+                  <div className={styles.emptyCircle} />
+                  <DesktopOutlined className={styles.emptyIcon} />
+                </div>
+                <h3>Slides / Relatórios</h3>
+                <p>
+                  Esta área exibe apresentações, gráficos, documentos e componentes interativos gerados em tempo real pelo seu assistente.
+                </p>
+                <div className={styles.canvasTip}>
+                  Experimente dizer: <code>"Aether, crie um slide de apresentação sobre o projeto"</code>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className={styles.emptyVisual}>
+                  <div className={styles.emptyCircle} />
+                  <GlobalOutlined className={styles.emptyIcon} />
+                </div>
+                <h3>Navegador Live</h3>
+                <p>
+                  Esta área exibe em tempo real o navegador web utilizado pelo assistente para realizar testes, navegação e depuração.
+                </p>
+                <div className={styles.canvasTip}>
+                  Experimente dizer: <code>"Aether, abra a página de login no navegador"</code>
+                </div>
+              </>
+            )}
           </div>
         )}
       </div>

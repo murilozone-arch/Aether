@@ -13,6 +13,7 @@ from typing import TYPE_CHECKING, Any, List
 from agentscope.model import ChatModelBase
 from openai import APIError
 
+from qwenpaw.constant import LLM_STREAM
 from qwenpaw.providers.provider import ModelInfo, Provider
 
 if TYPE_CHECKING:
@@ -135,11 +136,12 @@ class OpenAIProvider(Provider):
                 ],
                 timeout=timeout,
                 max_tokens=20,
-                stream=True,
+                stream=LLM_STREAM,
             )
             # consume the stream to ensure the model is actually responsive
-            async for _ in res:
-                break
+            if LLM_STREAM:
+                async for _ in res:
+                    break
             return True, ""
         except APIError:
             return False, f"API error when connecting to model '{model_id}'"
@@ -184,7 +186,7 @@ class OpenAIProvider(Provider):
 
         return OpenAIChatModelCompat(
             model_name=model_id,
-            stream=True,
+            stream=LLM_STREAM,
             api_key=self.api_key,
             stream_tool_parsing=False,
             client_kwargs=client_kwargs,

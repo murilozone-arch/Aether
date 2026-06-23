@@ -1,4 +1,10 @@
 import { SpeakerVerification } from "@jaehyun-ko/speaker-verification";
+import * as ort from "onnxruntime-web";
+
+// Configure local WASM paths for ONNX Runtime Web to run offline
+if (typeof window !== "undefined") {
+  ort.env.wasm.wasmPaths = "/models/wasm/";
+}
 
 // Declare standard browser Web Speech API types since TypeScript doesn't define them by default
 declare global {
@@ -66,12 +72,19 @@ class VoiceService {
     try {
       // 1. Initialize Speaker Verification
       this.verifier = new SpeakerVerification();
-      // Use 'standard-256' model, catch errors if CDN is down/offline
       try {
-        await this.verifier.initialize("standard-256");
-        console.log("[VoiceService] SpeakerVerification initialized successfully");
+        this.notifyStatus("Carregando modelo biométrico...");
+        // Fetch the model local file to ensure 100% offline usage and bypass HuggingFace CDN block
+        const response = await fetch("/models/NeXt_TDNN_C256_B3_K65_7.onnx");
+        if (!response.ok) {
+          throw new Error(`Falha ao carregar modelo biométrico local: ${response.statusText}`);
+        }
+        const modelData = await response.arrayBuffer();
+        
+        await this.verifier.initialize("standard-256", { modelData });
+        console.log("[VoiceService] SpeakerVerification initialized successfully with local model data");
       } catch (err) {
-        console.warn("[VoiceService] Failed to initialize SpeakerVerification (offline or CDN blocked). Verification will be bypassed.", err);
+        console.warn("[VoiceService] Failed to initialize SpeakerVerification. Verification will be bypassed.", err);
       }
 
       // 2. Initialize Web Speech API

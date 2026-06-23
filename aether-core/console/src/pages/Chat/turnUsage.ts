@@ -3,6 +3,8 @@ import type {
   IAgentScopeRuntimeWebUIRef,
   IAgentScopeRuntimeWebUIMessage,
 } from "@agentscope-ai/chat";
+import consoleTtsService from "../../services/consoleTtsService";
+import { extractCopyableText } from "./utils";
 
 export const TURN_USAGE_META_KEY = "qwenpaw_turn_usage";
 
@@ -261,6 +263,7 @@ export function wrapChatResponseUsageStream(
         if (pendingUsage) {
           schedulePatchLastResponseCardUsage(chatRef, pendingUsage);
         }
+        scheduleSpeakLastAssistantMessage(chatRef);
       },
     }),
   );
@@ -270,6 +273,42 @@ export function wrapChatResponseUsageStream(
     statusText: response.statusText,
     headers: response.headers,
   });
+}
+
+export function speakLastAssistantMessage(
+  chatRef: React.RefObject<IAgentScopeRuntimeWebUIRef | null>,
+): boolean {
+  const messagesApi = chatRef.current?.messages;
+  if (!messagesApi) return false;
+
+  const lastAssistantMsg = findPatchTargetAssistant(
+    messagesApi.getMessages() ?? [],
+  );
+  if (!lastAssistantMsg) return false;
+
+  const data = getResponseCardData(lastAssistantMsg.cards);
+  if (!data) return false;
+
+  const text = extractCopyableText(data as any);
+  if (text) {
+    consoleTtsService.speak(text);
+    return true;
+  }
+  return false;
+}
+
+export function scheduleSpeakLastAssistantMessage(
+  chatRef: React.RefObject<IAgentScopeRuntimeWebUIRef | null>,
+): void {
+  const trySpeak = () => speakLastAssistantMessage(chatRef);
+  if (trySpeak()) return;
+  let attempt = 0;
+  const retry = () => {
+    if (trySpeak() || attempt >= PATCH_MAX_ATTEMPTS) return;
+    attempt += 1;
+    window.setTimeout(retry, PATCH_RETRY_MS);
+  };
+  window.setTimeout(retry, 0);
 }
 
 function parseTurnUsageSsePayload(

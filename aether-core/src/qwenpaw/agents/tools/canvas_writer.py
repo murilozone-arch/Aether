@@ -46,6 +46,7 @@ async def canvas_writer(html_content: str) -> ToolResponse:
         # Broadcast the new HTML content over WebSocket to all connected clients
         await canvas_manager.broadcast({
             "type": "update",
+            "tab": "slides",
             "html": html_content,
             "url": "/modules/canvas.html"
         })

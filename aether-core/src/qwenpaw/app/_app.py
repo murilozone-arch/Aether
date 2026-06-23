@@ -771,6 +771,14 @@ if os.path.isdir(_CONSOLE_STATIC_DIR):
             name="assets",
         )
 
+    _modules_dir = _console_path / "modules"
+    _modules_dir.mkdir(parents=True, exist_ok=True)
+    app.mount(
+        "/modules",
+        StaticFiles(directory=str(_modules_dir)),
+        name="modules",
+    )
+
     @app.get("/console")
     @app.get("/console/")
     @app.get("/console/{full_path:path}")

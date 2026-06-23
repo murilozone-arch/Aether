@@ -9,6 +9,7 @@ from typing import Any, List, Optional
 from agentscope.model import ChatModelBase
 from openai import APIError, AsyncOpenAI
 
+from qwenpaw.constant import LLM_STREAM
 from qwenpaw.providers.provider import (
     Provider,
     ExtendedModelInfo,
@@ -333,11 +334,12 @@ class OpenRouterProvider(Provider):
                 messages=[{"role": "user", "content": "ping"}],
                 timeout=timeout,
                 max_tokens=1,
-                stream=True,
+                stream=LLM_STREAM,
             )
             # consume the stream to ensure the model is actually responsive
-            async for _ in res:
-                break
+            if LLM_STREAM:
+                async for _ in res:
+                    break
             return True, ""
         except APIError as e:
             return False, str(e)
@@ -347,7 +349,7 @@ class OpenRouterProvider(Provider):
 
         return OpenAIChatModelCompat(
             model_name=model_id,
-            stream=True,
+            stream=LLM_STREAM,
             api_key=self.api_key,
             client_kwargs={
                 "base_url": self.base_url,

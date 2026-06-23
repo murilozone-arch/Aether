@@ -13,6 +13,7 @@ from google import genai
 from google.genai import errors as genai_errors
 from google.genai import types as genai_types
 
+from qwenpaw.constant import LLM_STREAM
 from qwenpaw.providers.multimodal_prober import (
     ProbeResult,
     _PROBE_IMAGE_B64,
@@ -365,7 +366,7 @@ class GeminiProvider(Provider):
         )
         return GeminiChatModel(
             model_name=model_id,
-            stream=True,
+            stream=LLM_STREAM,
             api_key=self.api_key,
             client_kwargs=client_kwargs or None,
             generate_kwargs=generate_kwargs,

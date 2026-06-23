@@ -15,7 +15,7 @@ declare module "openwakeword-wasm-browser" {
 
 declare module "@jaehyun-ko/speaker-verification" {
   export class SpeakerVerification {
-    initialize(modelName?: string): Promise<void>;
+    initialize(modelName?: string, options?: { modelData?: ArrayBuffer; cacheModel?: boolean }): Promise<void>;
     getEmbedding(audio: File | Blob): Promise<{ embedding: Float32Array }>;
     compareEmbeddings(emb1: Float32Array, emb2: Float32Array): number;
   }

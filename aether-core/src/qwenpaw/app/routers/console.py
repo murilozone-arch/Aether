@@ -451,3 +451,31 @@ async def get_inbox_trace(run_id: str):
     if trace is None:
         raise HTTPException(status_code=404, detail="trace not found")
     return trace
+
+
+class BrowserInteractionRequest(BaseModel):
+    action: str
+    x_pct: float | None = None
+    y_pct: float | None = None
+    text: str | None = None
+    key: str | None = None
+    delta_y: float | None = None
+    url: str | None = None
+
+
+@router.post("/browser/interaction")
+async def post_browser_interaction(payload: BrowserInteractionRequest):
+    from qwenpaw.agents.tools.browser_control import handle_browser_interaction
+    res = await handle_browser_interaction(
+        action=payload.action,
+        x_pct=payload.x_pct,
+        y_pct=payload.y_pct,
+        text=payload.text,
+        key=payload.key,
+        delta_y=payload.delta_y,
+        url=payload.url,
+    )
+    if res.get("status") == "error":
+        raise HTTPException(status_code=400, detail=res.get("message"))
+    return res
+

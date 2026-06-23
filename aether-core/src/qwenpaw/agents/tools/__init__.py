@@ -31,6 +31,7 @@ from .agent_management import (
 )
 from .delegate_external_agent import delegate_external_agent
 from .canvas_writer import canvas_writer
+from .create_presentation import create_presentation
 
 # Registered via react_agent's hardcoded tool_functions; kept out of
 # __all__ so it's always enabled, not gated on agent config.
@@ -63,5 +64,6 @@ __all__ = [
     "check_agent_task",
     "spawn_subagent",
     "canvas_writer",
+    "create_presentation",
     "run_tool_batch",
 ]

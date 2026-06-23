@@ -648,7 +648,14 @@ _EMOJI_RE = _re.compile(
 
 
 def _clean_for_tts(text: str) -> str:
-    """Remove emoji and characters that DashScope TTS rejects."""
+    """Extract <speak> tag contents if present, otherwise clean HTML tags."""
+    speak_parts = _re.findall(r"<speak>(.*?)</speak>", text, _re.DOTALL | _re.IGNORECASE)
+    if speak_parts:
+        text = " ".join(part.strip() for part in speak_parts)
+    else:
+        # Strip other HTML tags
+        text = _re.sub(r"<[^>]+>", "", text)
+
     text = _EMOJI_RE.sub("", text)
     # Collapse multiple whitespace/newlines into single space
     text = _re.sub(r"\s+", " ", text).strip()

@@ -7,6 +7,7 @@ from typing import Any
 from agentscope.model import ChatModelBase
 from openai import AsyncOpenAI
 
+from qwenpaw.constant import LLM_STREAM
 from qwenpaw.providers.openai_provider import OpenAIProvider
 
 
@@ -72,7 +73,7 @@ class OllamaProvider(OpenAIProvider):
             client_kwargs["default_headers"] = headers
         return OpenAIChatModelCompat(
             model_name=model_id,
-            stream=True,
+            stream=LLM_STREAM,
             api_key=self.api_key,
             stream_tool_parsing=False,
             client_kwargs=client_kwargs,

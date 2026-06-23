@@ -12,6 +12,7 @@ import httpx
 from agentscope.model import ChatModelBase
 import anthropic
 
+from qwenpaw.constant import LLM_STREAM
 from qwenpaw.providers.multimodal_prober import (
     ProbeResult,
     _PROBE_IMAGE_B64,
@@ -278,7 +279,7 @@ class AnthropicProvider(Provider):
         return AnthropicChatModel(
             model_name=model_id,
             max_tokens=max_tokens,
-            stream=True,
+            stream=LLM_STREAM,
             api_key=api_key_arg,
             stream_tool_parsing=False,
             client_kwargs=client_kwargs,
