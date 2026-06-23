@@ -87,7 +87,7 @@ const ChatActionGroup: React.FC<ChatActionGroupProps> = ({
             icon={<FundProjectionScreenOutlined />}
             style={
               canvasVisible
-                ? { color: "var(--color-primary, #ff9d4d)" }
+                ? { color: "var(--color-primary, #1677ff)" }
                 : undefined
             }
             onClick={onToggleCanvas}
@@ -101,7 +101,7 @@ const ChatActionGroup: React.FC<ChatActionGroupProps> = ({
             icon={<SparkHistoryLine />}
             style={
               historyOpen
-                ? { color: "var(--color-primary, #ff9d4d)" }
+                ? { color: "var(--color-primary, #1677ff)" }
                 : undefined
             }
             onClick={onToggleHistory}
