@@ -221,7 +221,7 @@ export default function Sidebar({ selectedKey }: SidebarProps) {
   const decorateLabel = (item: MenuItem, label: ReactNode): ReactNode => {
     if (item.id !== "core.inbox" || label == null) return label;
     return (
-      <Badge dot={hasInboxUnread} color="rgba(255, 157, 77, 1)" offset={[5, 7]}>
+      <Badge dot={hasInboxUnread} color="rgba(22, 119, 255, 1)" offset={[5, 7]}>
         <span>{label}</span>
       </Badge>
     );
@@ -266,7 +266,7 @@ export default function Sidebar({ selectedKey }: SidebarProps) {
               width: 6,
               height: 6,
               borderRadius: "50%",
-              background: "rgba(255, 157, 77, 1)",
+              background: "rgba(22, 119, 255, 1)",
             }}
           />
         )}
@@ -477,7 +477,7 @@ export default function Sidebar({ selectedKey }: SidebarProps) {
                               width: 6,
                               height: 6,
                               borderRadius: "50%",
-                              background: "rgba(255, 157, 77, 1)",
+                              background: "rgba(22, 119, 255, 1)",
                             }}
                           />
                         )}

@@ -169,8 +169,8 @@ export default function Header() {
           */}
           <Slot name="header.logo" kind="replace">
             <img
-              src={isDark ? "/logo-dark.svg" : "/logo-light.svg"}
-              alt="QwenPaw"
+              src={isDark ? "/logo-dark.svg?v=2" : "/logo-light.svg?v=2"}
+              alt="Aether"
               className={styles.logoImg}
             />
           </Slot>
@@ -178,7 +178,7 @@ export default function Header() {
           {version && (
             <Badge
               dot={!!hasUpdate}
-              color="rgba(255, 157, 77, 1)"
+              color="rgba(22, 119, 255, 1)"
               offset={[4, 28]}
             >
               <span
