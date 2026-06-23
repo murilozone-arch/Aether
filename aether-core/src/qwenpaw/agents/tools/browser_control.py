@@ -5322,40 +5322,42 @@ def _generate_interactive_html(url: str, t: int) -> str:
 
 
 async def _broadcast_browser_state(page) -> None:
+    """Broadcast the current browser URL/title to all Live Browser WebSocket clients.
+
+    The frontend LiveBrowser component will load the URL through the reverse
+    proxy — the backend only needs to advertise which URL the Playwright page
+    is on. No screenshots are taken.
+    """
     try:
-        from qwenpaw.app._app import _CONSOLE_STATIC_DIR, canvas_manager
-        if _CONSOLE_STATIC_DIR:
-            modules_path = Path(_CONSOLE_STATIC_DIR) / "modules"
-            modules_path.mkdir(parents=True, exist_ok=True)
-            screenshot_path = modules_path / "browser_screenshot.png"
-            
-            if _USE_SYNC_PLAYWRIGHT:
-                await _run_sync(
-                    page.screenshot,
-                    path=str(screenshot_path),
-                    type="png",
-                )
-            else:
-                await page.screenshot(
-                    path=str(screenshot_path),
-                    type="png",
-                )
-                
-            t = int(time.time() * 1000)
-            url = page.url
-            html_content = _generate_interactive_html(url, t)
-            
-            browser_file = modules_path / "browser.html"
-            browser_file.write_text(html_content, encoding="utf-8")
-            
+        from qwenpaw.app._app import browser_stream_manager
+
+        current_url = page.url or ""
+        try:
+            title = await page.title() if not _USE_SYNC_PLAYWRIGHT else await _run_sync(page.title)
+        except Exception:
+            title = ""
+
+        await browser_stream_manager.broadcast({
+            "type": "navigate",
+            "url": current_url,
+            "title": title,
+        })
+
+        # Also keep the legacy canvas_manager broadcast so existing
+        # integrations that still watch /ws/canvas for tab=browser work.
+        try:
+            from qwenpaw.app._app import canvas_manager
             await canvas_manager.broadcast({
-                "type": "update",
-                "tab": "browser",
-                "html": html_content,
-                "url": "/modules/browser.html"
+                "type": "browser_navigate",
+                "url": current_url,
+                "title": title,
             })
+        except Exception:
+            pass
+
     except Exception as e:
-        logger.warning("Failed to auto-broadcast browser screenshot: %s", e)
+        logger.warning("Failed to broadcast browser state: %s", e)
+
 
 
 async def handle_browser_interaction(

@@ -749,6 +749,89 @@ async def websocket_endpoint(websocket: WebSocket):
     except Exception:
         canvas_manager.disconnect(websocket)
 
+
+class BrowserStreamManager:
+    """WebSocket manager for the Live Browser tab.
+
+    Clients subscribe to receive browser state updates:
+    - ``navigate``: agent navigated to a new URL
+    - ``title``: page title changed
+    - ``private_mode``: privacy toggle state from agent
+
+    Clients can also SEND messages upstream (e.g. user typed a URL in
+    the address bar) — those are currently just logged; future versions
+    may relay them to Playwright.
+    """
+
+    def __init__(self):
+        self.active_connections: list[WebSocket] = []
+        self._current_url: str = ""
+        self._current_title: str = ""
+
+    async def connect(self, websocket: WebSocket):
+        await websocket.accept()
+        self.active_connections.append(websocket)
+        # Send current state immediately on connect
+        if self._current_url:
+            try:
+                await websocket.send_json({
+                    "type": "navigate",
+                    "url": self._current_url,
+                    "title": self._current_title,
+                })
+            except Exception:
+                pass
+
+    def disconnect(self, websocket: WebSocket):
+        if websocket in self.active_connections:
+            self.active_connections.remove(websocket)
+
+    async def broadcast(self, message: dict):
+        # Cache last known URL / title
+        if message.get("type") == "navigate":
+            self._current_url = message.get("url", self._current_url)
+            self._current_title = message.get("title", self._current_title)
+        disconnected = []
+        for connection in self.active_connections:
+            try:
+                await connection.send_json(message)
+            except Exception:
+                disconnected.append(connection)
+        for ws in disconnected:
+            self.disconnect(ws)
+
+
+browser_stream_manager = BrowserStreamManager()
+
+
+@app.websocket("/ws/browser")
+async def ws_browser_endpoint(websocket: WebSocket):
+    """WebSocket for the Aether Live Browser panel.
+
+    Server → Client messages (JSON):
+      {"type": "navigate", "url": "https://...", "title": "Page Title"}
+      {"type": "title",    "title": "New Title"}
+      {"type": "private_mode", "enabled": true|false}
+
+    Client → Server messages (JSON, currently informational):
+      {"type": "user_navigate", "url": "https://..."}
+    """
+    await browser_stream_manager.connect(websocket)
+    try:
+        while True:
+            raw = await websocket.receive_text()
+            try:
+                import json as _json
+                msg = _json.loads(raw)
+                logger.debug("[ws/browser] client message: %s", msg)
+                # Future: relay user navigations to Playwright
+            except Exception:
+                pass
+    except WebSocketDisconnect:
+        browser_stream_manager.disconnect(websocket)
+    except Exception:
+        browser_stream_manager.disconnect(websocket)
+
 # Custom channel routes (before SPA catch-all to ensure route priority)
 register_custom_channel_routes(app)
 
