@@ -77,7 +77,10 @@ qwenpaw app
 
 Este projeto é um fork do **QwenPaw**, desenvolvido originalmente por **AgentScope-AI**. Expressamos nossos agradecimentos à equipe de desenvolvimento do AgentScope pelo excelente trabalho na criação do assistente pessoal automatizado.
 
-*   Repositório Original: [github.com/agentscope-ai/QwenPaw](https://github.com/agentscope-ai/QwenPaw)
+Agradecemos também ao **Professor Sandeco** pela criação do **MIRA Animator**, cuja identidade visual vibrante, transições 3D e conceitos estéticos inspiraram profundamente o design do tema de apresentações interativas no Aether Canvas.
+
+*   Repositório Original do QwenPaw: [github.com/agentscope-ai/QwenPaw](https://github.com/agentscope-ai/QwenPaw)
 *   Documentação Original: [qwenpaw.agentscope.io](https://qwenpaw.agentscope.io/)
+*   MIRA Animator (Prof. Sandeco): [sandeco.github.io/mira-animator/pt/](https://sandeco.github.io/mira-animator/pt/)
 
 Aether mantém a licença original do QwenPaw. Para mais detalhes, consulte o arquivo [LICENSE](aether-core/LICENSE).
